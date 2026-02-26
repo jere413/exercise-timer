@@ -7,35 +7,57 @@
 
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding: 20px;
-        background-color: #111;
-        color: white;
-    }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #111, #222, #111);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+}
 
-    input {
-        width: 60px;
-        font-size: 18px;
-        text-align: center;
-    }
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
 
-    button {
-        font-size: 18px;
-        padding: 10px 20px;
-        margin: 5px;
-    }
+h2 { margin-top: 10px; }
 
-    #display {
-        font-size: 64px;
-        margin: 30px 0;
-    }
+.section {
+    margin: 15px 0;
+}
 
-    .section {
-        margin-bottom: 20px;
-    }
+input {
+    width: 70px;
+    font-size: 22px;
+    text-align: center;
+}
+
+#display {
+    font-size: 18vw;
+    font-weight: bold;
+    margin: 40px 0;
+}
+
+button {
+    font-size: 24px;
+    padding: 20px 40px;
+    margin: 10px;
+    border-radius: 12px;
+    border: none;
+}
+
+.start { background: #28a745; color: white; }
+.stop  { background: #dc3545; color: white; }
+.reset { background: #ffc107; color: black; }
+
+button:active {
+    transform: scale(0.95);
+}
 </style>
 </head>
 <body>
@@ -43,66 +65,109 @@
 <h2>Exercise Timer</h2>
 
 <div class="section">
-    <h3>Countdown Time</h3>
-    <input id="downMin" type="number" min="0" value="0"> :
-    <input id="downSec" type="number" min="0" max="59" value="30">
+Countdown:
+<input id="downMin" type="number" min="0" value="0"> :
+<input id="downSec" type="number" min="0" max="59" value="10">
 </div>
 
 <div class="section">
-    <h3>Count-Up Target</h3>
-    <input id="upMin" type="number" min="0" value="1"> :
-    <input id="upSec" type="number" min="0" max="59" value="0">
+Work Time:
+<input id="upMin" type="number" min="0" value="1"> :
+<input id="upSec" type="number" min="0" max="59" value="0">
 </div>
 
-<div id="display">00:30</div>
+<div class="section">
+Rounds:
+<input id="rounds" type="number" min="1" value="3">
+</div>
+
+<div id="display">00:10</div>
 
 <div>
-    <button onclick="startTimer()">Start</button>
-    <button onclick="stopTimer()">Stop</button>
-    <button onclick="resetTimer()">Reset</button>
+<button class="start" onclick="startTimer()">START</button>
+<button class="stop" onclick="stopTimer()">STOP</button>
+<button class="reset" onclick="resetTimer()">RESET</button>
 </div>
 
 <script>
 let interval = null;
-let mode = "idle"; // idle | countdown | countup
+let mode = "idle";
 let currentTime = 0;
 let targetUpTime = 0;
+let totalRounds = 1;
+let currentRound = 1;
+let wakeLock = null;
 
-function formatTime(totalSeconds) {
-    let m = Math.floor(totalSeconds / 60);
-    let s = totalSeconds % 60;
-    return String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
+function formatTime(t) {
+    let m = Math.floor(t / 60);
+    let s = t % 60;
+    return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
+
+function playBeep() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(1000, ctx.currentTime);
+    osc.connect(ctx.destination);
+    osc.start();
+    setTimeout(() => osc.stop(), 300);
+}
+
+async function requestWakeLock() {
+    try {
+        wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) {
+        console.log("Wake lock not supported");
+    }
 }
 
 function startTimer() {
     if (interval) return;
 
     if (mode === "idle") {
-        let downMin = parseInt(document.getElementById("downMin").value) || 0;
-        let downSec = parseInt(document.getElementById("downSec").value) || 0;
-        let upMin = parseInt(document.getElementById("upMin").value) || 0;
-        let upSec = parseInt(document.getElementById("upSec").value) || 0;
+        let downMin = parseInt(downMinInput.value) || 0;
+        let downSec = parseInt(downSecInput.value) || 0;
+        let upMin = parseInt(upMinInput.value) || 0;
+        let upSec = parseInt(upSecInput.value) || 0;
 
         currentTime = downMin * 60 + downSec;
         targetUpTime = upMin * 60 + upSec;
+        totalRounds = parseInt(rounds.value) || 1;
+        currentRound = 1;
         mode = "countdown";
+        document.body.style.backgroundColor = "#003366";
+        requestWakeLock();
     }
 
     interval = setInterval(() => {
         if (mode === "countdown") {
             currentTime--;
             if (currentTime <= 0) {
-                currentTime = 0;
+                playBeep();
                 mode = "countup";
+                currentTime = 0;
+                document.body.style.backgroundColor = "#004d00";
             }
-        } else if (mode === "countup") {
+        }
+        else if (mode === "countup") {
             currentTime++;
             if (currentTime >= targetUpTime) {
-                stopTimer();
+                playBeep();
+                if (currentRound < totalRounds) {
+                    currentRound++;
+                    mode = "countdown";
+                    currentTime = parseInt(downMinInput.value)*60 +
+                                  parseInt(downSecInput.value);
+                    document.body.style.backgroundColor = "#003366";
+                } else {
+                    stopTimer();
+                    document.body.style.backgroundColor = "#660000";
+                }
             }
         }
 
-        document.getElementById("display").innerText = formatTime(currentTime);
+        display.innerText = formatTime(currentTime);
     }, 1000);
 }
 
@@ -114,18 +179,21 @@ function stopTimer() {
 function resetTimer() {
     stopTimer();
     mode = "idle";
-    let downMin = parseInt(document.getElementById("downMin").value) || 0;
-    let downSec = parseInt(document.getElementById("downSec").value) || 0;
+    currentRound = 1;
+    let downMin = parseInt(downMinInput.value) || 0;
+    let downSec = parseInt(downSecInput.value) || 0;
     currentTime = downMin * 60 + downSec;
-    document.getElementById("display").innerText = formatTime(currentTime);
+    display.innerText = formatTime(currentTime);
+    document.body.style.backgroundColor = "#111";
 }
 
 window.onload = resetTimer;
-</script>
-<script>
+
+// service worker
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js');
 }
 </script>
+
 </body>
 </html>

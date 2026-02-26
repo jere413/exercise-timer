@@ -10,13 +10,21 @@
 
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    color: white;
-    background: linear-gradient(135deg, #111, #222, #111);
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  color: white;
+
+  /* Subtle gym spotlight effect */
+  background:
+    radial-gradient(
+      circle at center,
+      #1f1f1f 0%,
+      #141414 40%,
+      #0e0e0e 75%,
+      #000000 100%
+    );
+
+  background-attachment: fixed;
 }
 
 @keyframes gradientMove {
@@ -198,4 +206,5 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
+
 

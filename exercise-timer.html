@@ -98,6 +98,13 @@ let totalRounds = 1;
 let currentRound = 1;
 let wakeLock = null;
 
+const downMinInput = document.getElementById("downMin");
+const downSecInput = document.getElementById("downSec");
+const upMinInput = document.getElementById("upMin");
+const upSecInput = document.getElementById("upSec");
+const roundsInput = document.getElementById("rounds");
+const display = document.getElementById("display");
+
 function formatTime(t) {
     let m = Math.floor(t / 60);
     let s = t % 60;
@@ -133,10 +140,9 @@ function startTimer() {
 
         currentTime = downMin * 60 + downSec;
         targetUpTime = upMin * 60 + upSec;
-        totalRounds = parseInt(rounds.value) || 1;
+        totalRounds = parseInt(roundsInput.value) || 1;
         currentRound = 1;
         mode = "countdown";
-        document.body.style.backgroundColor = "#003366";
         requestWakeLock();
     }
 
@@ -147,7 +153,6 @@ function startTimer() {
                 playBeep();
                 mode = "countup";
                 currentTime = 0;
-                document.body.style.backgroundColor = "#004d00";
             }
         }
         else if (mode === "countup") {
@@ -159,10 +164,8 @@ function startTimer() {
                     mode = "countdown";
                     currentTime = parseInt(downMinInput.value)*60 +
                                   parseInt(downSecInput.value);
-                    document.body.style.backgroundColor = "#003366";
                 } else {
                     stopTimer();
-                    document.body.style.backgroundColor = "#660000";
                 }
             }
         }
@@ -184,12 +187,10 @@ function resetTimer() {
     let downSec = parseInt(downSecInput.value) || 0;
     currentTime = downMin * 60 + downSec;
     display.innerText = formatTime(currentTime);
-    document.body.style.backgroundColor = "#111";
 }
 
 window.onload = resetTimer;
 
-// service worker
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js');
 }
@@ -197,3 +198,4 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
+

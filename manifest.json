@@ -1,7 +1,7 @@
 {
   "name": "Exercise Timer",
   "short_name": "Timer",
-  "start_url": "exercise-timer.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
@@ -17,4 +17,5 @@
       "type": "image/png"
     }
   ]
+
 }
